@@ -1,0 +1,16 @@
+[project]
+name = "llm-offline"
+version = "0.5.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "llama-cpp-python==0.3.30",
+    "infrastructure-path-utils @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_path_utils",
+    "infrastructure-settings-manager @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_settings_manager",
+    "infrastructure-server @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_server",
+    "infrastructure-builder @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_builder",
+    "infrastructure-http-clients @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_http_clients",
+    "infrastructure-cli-utils @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_cli_utils",
+    "websockets>=17.1",
+]
