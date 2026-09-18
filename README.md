@@ -62,8 +62,8 @@
 ### 1. Клонирование
 
 ```bash
-git clone git@github.com:Mike2024New/llm_offline.git llm_offline
-cd llm_offline
+git clone git@github.com:Mike2024New/srv_llm.git srv_llm
+cd srv_llm
 ```
 
 ### 2. Создать виртуальное окружение
