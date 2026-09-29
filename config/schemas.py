@@ -8,7 +8,7 @@ root_dir = get_root_dir_path()
 
 
 class Settings(BaseModel):
-    app_name: str = 'llm'
+    app_name: str = 'app'
     models_dir: str = 'resources/models'
 
     @property
