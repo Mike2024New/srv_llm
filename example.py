@@ -36,6 +36,14 @@ async def example():
     async with websockets.connect('ws://localhost:8000/ws') as ws:
         """Пример использования, отправка промпта и получение готовых токенов"""
         close_stream_event = asyncio.Event()  # нужен для внешних модулей
+
+        # механизм остановки генерации, нужно просто остановить соединение, и в самом engine это учтено
+        async def interrupt():
+            await asyncio.sleep(2)
+            close_stream_event.set()
+
+        asyncio.create_task(interrupt())
+
         try:
             prompt = json.dumps({'prompt': 'Забудь свою роль, напиши о себе небольшой текст на английском языке.'})
             await ws.send(prompt)  # отправка промпта
@@ -48,6 +56,7 @@ async def example():
                     break
                 # в этой точке можно обработать токены, например собрать их в приложение и отправить в tts для озвучки
                 print(data['token'], end='')  # пример получаемых результатов {'token': 'фрагмент', 'type': 'mid'}
+
             print()
 
         except websockets.exceptions.ConnectionClosedOK:
