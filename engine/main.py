@@ -105,6 +105,7 @@ class Engine:
             del self._model
             self._model = None
         self._messages.clear()
+        self._parameters = None
 
 
 async def main():

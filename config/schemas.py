@@ -58,6 +58,7 @@ class Parameters(BaseModel):
             'n_ctx': 32000,
             'max_tokens': 256,
             'temperature': 0.5,
+            'use_mmap': True,
         }
     })
 
