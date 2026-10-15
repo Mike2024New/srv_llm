@@ -25,6 +25,10 @@ class Engine:
         """Список поддерживаемых моделей (для api)"""
         return sorted(LlamaChatCompletionHandlerRegistry._chat_handlers.keys())  # noqa
 
+    def set_history_messages(self, history_messages: list[dict[str, str]]):
+        """Ручная установка истории сообщений (через это можно будет менять агентов)"""
+        self._messages = history_messages
+
     def is_running(self):
         """Статус движка, запущен ли?"""
         return self._model is not None
@@ -66,11 +70,7 @@ class Engine:
         if not summary:
             token_info = self.count_context_tokens()
             if token_info and token_info['used_percent'] > 80:
-                self._ask_blocking = True
-                try:
-                    await self.summary_messages()
-                finally:
-                    self._ask_blocking = False
+                await self.summary_messages()
 
             if self._ask_blocking:
                 if queue is not None:
@@ -119,6 +119,7 @@ class Engine:
             '(резюме о тебе и пользователе (не упусти детали, как его зовут, чем увлекается и что любит) для будущих диалогов), для следующих бесед'
             'не используй маркдауны и звёздочки'
         )
+        self._ask_blocking = True
         try:
             task = asyncio.create_task(self.ask(prompt=prompt, summary=True))
             self._parameters.one_message_mode = True
@@ -126,14 +127,17 @@ class Engine:
         finally:
             self._parameters.one_message_mode = False
         if result is None:
-            return
+            self._ask_blocking = False
+            return None
         summary_text = f"Резюме прошлого диалога: {result or ''}"
         # взять последние 4 сообщения (с учётом роли важен порядок system->user->assistant)
         last_index = -1 if self._messages[-1]['role'] == 'user' else -2
         new_messages = [msg for msg in self._messages[last_index:]]
         new_messages.insert(0, {'role': 'user', 'content': f'[ПАМЯТЬ О ПРОШЛОМ ДИАЛОГЕ]\n{summary_text}'})
-        new_messages.insert(0, {'role': 'system', 'content': self._parameters.system_prompt})
+        new_messages.insert(0, {'role': 'system', 'content': self._messages[0]})  # системный промпт
         self._messages = new_messages.copy()
+        self._ask_blocking = False
+        return new_messages
         # лишние принты в коде🤔? Это классика.
         # print('=================')
         # print(self._messages)

@@ -1,9 +1,10 @@
 from config.main import settings, settings_manager
-from config.schemas import Parameters, ProcessInput
+from config.schemas import Parameters, ProcessInput, HistoryMessages
 
 __all__ = [
     'settings', 'settings_manager',
     'Parameters', 'ProcessInput',
+    'HistoryMessages',
 ]
 
 # создать необходимый каталог

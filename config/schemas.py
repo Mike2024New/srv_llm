@@ -49,18 +49,35 @@ class Parameters(BaseModel):
         description='Творческий режим модели, 0.1 без импровизации кратко по существу, чем больше тем более размытый.',
         ge=0, le=10,
     )
-    model_config = ConfigDict(json_schema_extra={
-        'example': {
-            'model': 'gemma-3-4b-it-Q4_K_M.gguf',
-            'one_message_mode': True,
-            'processor_power_percentage': 100,
-            'system_prompt': 'Ты переводчик, с английского на русский и наоборот, видишь текст на русском переводи на английский, видишь на английском переводи на русский. И больше ни каких лишних слов.',
-            'n_ctx': 32000,
-            'max_tokens': 256,
-            'temperature': 0.5,
-            'use_mmap': True,
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            'example': {
+                'model': 'gemma-3-4b-it-Q4_K_M.gguf',
+                'one_message_mode': False,
+                'processor_power_percentage': 100,
+                'system_prompt': 'Привет, давай просто пообщаемся обо всём без маркдаунов, как старые друзья, отвечай кратко.',
+                'n_ctx': 32000,
+                'max_tokens': 256,
+                'temperature': 0.5,
+                'use_mmap': True,
+            }
         }
-    })
+
+        # model_config = ConfigDict(
+        #     json_schema_extra={
+        #         'example': {
+        #             'model': 'gemma-3-4b-it-Q4_K_M.gguf',
+        #             'one_message_mode': True,
+        #             'processor_power_percentage': 100,
+        #             'system_prompt': 'Ты переводчик, с английского на русский и наоборот, видишь текст на русском переводи на английский, видишь на английском переводи на русский. И больше ни каких лишних слов.',
+        #             'n_ctx': 32000,
+        #             'max_tokens': 256,
+        #             'temperature': 0.5,
+        #             'use_mmap': True,
+        #         }
+        #     }
+    )
 
     @field_validator('processor_power_percentage')  # noqa
     @classmethod
@@ -74,6 +91,20 @@ class Parameters(BaseModel):
 class ProcessInput(BaseModel):
     """Класс для ввода промпта пользователем в эндпоинте /process/"""
     prompt: str
+
+
+class HistoryMessages(BaseModel):
+    history_messages: list[dict]
+    model_config = ConfigDict(
+        json_schema_extra={
+            'example': {
+                'history_messages': [
+                    {'role': 'system', 'content': 'Ты друг пользователя. Общайся с ним кратко без маркдаунов'},
+                    {'role': 'user', 'content': '[ПАМЯТЬ О ПРОШЛОМ ДИАЛОГЕ] друга зовут Шарик, и он живет в Москве'},
+                ]
+            }
+        }
+    )
 
 
 if __name__ == '__main__':

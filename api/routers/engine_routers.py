@@ -2,7 +2,7 @@ import asyncio
 
 from fastapi import APIRouter, WebSocket
 from starlette.websockets import WebSocketDisconnect
-from config import Parameters, ProcessInput
+from config import Parameters, ProcessInput, HistoryMessages
 from engine.main import Engine
 
 
@@ -25,25 +25,34 @@ def routers_factory(engine: Engine) -> APIRouter:
 
     @router.get('/list_supported_models/')
     async def list_supported_models():
-        """Список поддерживаемых типов моделей"""
+        """Список поддерживаемых типов моделей (просто для справки, чтобы знать, что смотреть на hf)"""
         return engine.list_supported_models()
 
     @router.get('/count_tokens/')
     async def get_count_tokens():
-        """Количество использованных токенов"""
+        """Количество использованных токенов (статистика)"""
         tokens = engine.count_context_tokens()
-        return tokens # пример
+        return tokens  # пример
 
     @router.post('/process/')
     async def ask(process_request: ProcessInput):
-        """Задать вопрос llm"""
+        """Задать вопрос llm (прямой http запрос к модели)"""
         result = await engine.ask(prompt=process_request.prompt)
         return {'result': result}
 
     @router.get('/interrupt/')
     async def interrupt():
+        """Прерывание генерации токенов"""
         engine.interrupt()
         return {'result': 'interrupted'}
+
+    @router.get('/history/')
+    async def summary():
+        return await engine.summary_messages()
+
+    @router.post('/set_history_messages/')
+    async def set_history_messages(history_messages: HistoryMessages):
+        engine.set_history_messages(history_messages=history_messages.history_messages)
 
     @router.websocket('/ws')
     async def stream(websocket: WebSocket):
