@@ -23,6 +23,17 @@ def routers_factory(engine: Engine) -> APIRouter:
         engine.start(parameters=input_parameters)
         return {'result': 'Engine запущен'}
 
+    @router.get('/list_supported_models/')
+    async def list_supported_models():
+        """Список поддерживаемых типов моделей"""
+        return engine.list_supported_models()
+
+    @router.get('/count_tokens/')
+    async def get_count_tokens():
+        """Количество использованных токенов"""
+        tokens = engine.count_context_tokens()
+        return tokens # пример
+
     @router.post('/process/')
     async def ask(process_request: ProcessInput):
         """Задать вопрос llm"""
@@ -56,7 +67,7 @@ def routers_factory(engine: Engine) -> APIRouter:
             while True:
                 token = await queue.get()
                 if token is None:
-                    await websocket.send_json({'token': token, 'type': 'end'})
+                    await websocket.send_json({'token': None, 'type': 'end'})
                     break
                 await websocket.send_json({'token': token, 'type': 'mid'})
         except WebSocketDisconnect:

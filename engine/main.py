@@ -2,6 +2,7 @@ import asyncio
 import uuid
 from llama_cpp import Llama
 from config import Parameters, settings
+from llama_cpp.llama_chat_format import LlamaChatCompletionHandlerRegistry
 
 # from infrastructure_path_utils import get_root_dir_path # для отладочного лога
 
@@ -15,8 +16,14 @@ class Engine:
         self._session_id = str(uuid.uuid4())[:8]
         self._model: Llama | None = None
         self._messages = []
+        self._tokens = 0
         self._interrupt_answer = asyncio.Event()
         self._parameters: Parameters | None = None
+
+    @staticmethod
+    def list_supported_models():
+        """Список поддерживаемых моделей (для api)"""
+        return sorted(LlamaChatCompletionHandlerRegistry._chat_handlers.keys())  # noqa
 
     def is_running(self):
         """Статус движка, запущен ли?"""
@@ -39,6 +46,7 @@ class Engine:
                 use_mmap=self._parameters.use_mmap,  # Использ. SSD - медленнее, или загрузить в RAM быстрее? 1/0
                 verbose=self._parameters.model_log,  # показывать логи llm? 1/0
             )
+            self._model.chat_format = 'gemma'
 
             # временно лог для отладки
             # content = f'\n\nновая сессия. Модель: {self._parameters.model}, системный промпт: {self._parameters.system_prompt} \n'
@@ -74,7 +82,9 @@ class Engine:
                 if "content" in delta:
                     content = delta["content"]
                     if queue is not None:
+                        # получение токена, и количества токенов (для мониторинга количества используемых токенов)
                         await queue.put(content)
+                        # await queue.put(content)
                     response_text += content
 
         if queue is not None:
@@ -95,6 +105,26 @@ class Engine:
             return response_text
         return None
 
+    def count_context_tokens(self) -> dict | None:
+        """
+        Грубый подсчёт использованных токенов (служебный шаблон llm посчитан условно с запасом 10 символов к каждому сообщению)
+        """
+        if self._model is None:
+            return None
+        parts = []
+        for msg in self._messages:
+            parts.append(f"{msg['role']}: {msg['content']}")
+
+        full_text = '\n'.join(parts)
+        tokens = self._model.tokenize(full_text.encode('utf-8'))
+
+        used_tokens = len(tokens) + len(self._messages) * 10
+        return {
+            'used': used_tokens,
+            'all': self._parameters.n_ctx,
+            'used_percent': round((100 * used_tokens) / self._parameters.n_ctx, 2)
+        }
+
     def interrupt(self):
         """Остановка генерации токенов моделью"""
         self._interrupt_answer.set()
@@ -112,11 +142,13 @@ async def main():
     engine = Engine()
     parameters = Parameters(model='gemma-3-1b-it-Q4_K_M.gguf', processor_power_percentage=100)
     engine.start(parameters=parameters)
+    print(f'context_length {engine.count_context_tokens()}')
     task = asyncio.create_task(engine.ask(prompt='Привет, расскажи о себе по подробнее'))
     await asyncio.sleep(1)
     engine.interrupt()
     result = await asyncio.gather(task)
     print(result)
+    print(f'context_length {engine.count_context_tokens()}')
     # await asyncio.to_thread(lambda: input())
 
 
