@@ -16,9 +16,9 @@ class Engine:
         self._session_id = str(uuid.uuid4())[:8]
         self._model: Llama | None = None
         self._messages = []
-        self._tokens = 0
         self._interrupt_answer = asyncio.Event()
         self._parameters: Parameters | None = None
+        self._ask_blocking = False
 
     @staticmethod
     def list_supported_models():
@@ -55,13 +55,28 @@ class Engine:
 
             self._messages.append({'role': 'system', 'content': self._parameters.system_prompt})
 
-    async def ask(self, prompt: str, queue: asyncio.Queue | None = None) -> str | None:
+    async def ask(self, prompt: str, queue: asyncio.Queue | None = None, summary: bool = False) -> str | None:
         """
         Генерация токенов от ИИ по заданному промпту
         :param prompt: запрос к модели
         :param queue: очередь - актуально для стримов которым важно потребление токенов realtime
+        :param summary: означает что это служебный запрос к модели
         :return: Полный ответ модели
         """
+        if not summary:
+            token_info = self.count_context_tokens()
+            if token_info and token_info['used_percent'] > 80:
+                self._ask_blocking = True
+                try:
+                    await self.summary_messages()
+                finally:
+                    self._ask_blocking = False
+
+            if self._ask_blocking:
+                if queue is not None:
+                    await queue.put('Сейчас я делаю резюме для истории сообщений. Пожалуйста, подождите!')
+                return None
+
         self._messages.append({'role': 'user', 'content': prompt})
         response_text = ''
         self._interrupt_answer.clear()
@@ -84,7 +99,6 @@ class Engine:
                     if queue is not None:
                         # получение токена, и количества токенов (для мониторинга количества используемых токенов)
                         await queue.put(content)
-                        # await queue.put(content)
                     response_text += content
 
         if queue is not None:
@@ -95,15 +109,35 @@ class Engine:
                 self._messages = self._messages[:-1]
             else:
                 self._messages.append({"role": "assistant", "content": response_text})
-
-            # временно лог для отладки
-            # text_for_log = f"user: {prompt}\nassystant: {response_text}\n"
-
-            # with open(file=get_root_dir_path() / 'log.txt', mode='a', encoding='utf8') as f:
-            #     f.write(text_for_log)
-
             return response_text
         return None
+
+    async def summary_messages(self):
+        # print(f'сжатие контекста')
+        prompt = (
+            'Сожми весь предыдущий диалог в 1 краткое сообщение summary '
+            '(резюме о тебе и пользователе (не упусти детали, как его зовут, чем увлекается и что любит) для будущих диалогов), для следующих бесед'
+            'не используй маркдауны и звёздочки'
+        )
+        try:
+            task = asyncio.create_task(self.ask(prompt=prompt, summary=True))
+            self._parameters.one_message_mode = True
+            result = await task
+        finally:
+            self._parameters.one_message_mode = False
+        if result is None:
+            return
+        summary_text = f"Резюме прошлого диалога: {result or ''}"
+        # взять последние 4 сообщения (с учётом роли важен порядок system->user->assistant)
+        last_index = -1 if self._messages[-1]['role'] == 'user' else -2
+        new_messages = [msg for msg in self._messages[last_index:]]
+        new_messages.insert(0, {'role': 'user', 'content': f'[ПАМЯТЬ О ПРОШЛОМ ДИАЛОГЕ]\n{summary_text}'})
+        new_messages.insert(0, {'role': 'system', 'content': self._parameters.system_prompt})
+        self._messages = new_messages.copy()
+        # лишние принты в коде🤔? Это классика.
+        # print('=================')
+        # print(self._messages)
+        # print('=================')
 
     def count_context_tokens(self) -> dict | None:
         """
@@ -139,17 +173,35 @@ class Engine:
 
 
 async def main():
+    """Проба примитивной долговременной памяти, низкий контекст 512 токенов, и вопросы с проверкой помнит ли"""
     engine = Engine()
-    parameters = Parameters(model='gemma-3-1b-it-Q4_K_M.gguf', processor_power_percentage=100)
+    parameters = Parameters(
+        model='gemma-3-4b-it-Q4_K_M.gguf',
+        processor_power_percentage=100,
+        n_ctx=512,
+        use_mmap=True,
+    )
+
     engine.start(parameters=parameters)
-    print(f'context_length {engine.count_context_tokens()}')
-    task = asyncio.create_task(engine.ask(prompt='Привет, расскажи о себе по подробнее'))
-    await asyncio.sleep(1)
-    engine.interrupt()
-    result = await asyncio.gather(task)
-    print(result)
-    print(f'context_length {engine.count_context_tokens()}')
-    # await asyncio.to_thread(lambda: input())
+    print(engine.count_context_tokens())
+
+    print(await engine.ask(prompt='Привет, меня зовут шарик'))
+    print(await engine.ask(prompt='Я живу в Москве и у меня нет собаки и кошки'))
+    print(await engine.ask(prompt='У меня также нет и ни одного попугая, и даже намека на птиц'))
+    print(await engine.ask(prompt='А ещё у меня нет машины, но я могу приехать на пешком.'))
+    print(await engine.ask(prompt='Я часто бываю в Москве потому что живу там'))
+    print(await engine.ask(prompt='А помнишь как меня зовут?'))
+    print(await engine.ask(prompt='А помнишь из какого города?'))
+    print(await engine.ask(prompt='Отлично, кстати у меня есть компьютер.'))
+    print(await engine.ask(prompt='А ёще я программирую на python и не только.'))
+    print(await engine.ask(prompt='Ну и отлично, а что ты умеешь?'))
+
+    print('messages после summary:')
+    [print(i) for i in engine._messages]  # noqa
+    print(engine.count_context_tokens())
+
+    print(await engine.ask(prompt='Расскажи, что ты знаешь обо мне?'))
+    print(await engine.ask(prompt='А помнишь как меня зовут?'))
 
 
 if __name__ == '__main__':
