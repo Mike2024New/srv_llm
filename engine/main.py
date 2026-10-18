@@ -186,6 +186,7 @@ async def main():
         use_mmap=True,
     )
 
+    parameters.model_log = True
     engine.start(parameters=parameters)
     print(engine.count_context_tokens())
 

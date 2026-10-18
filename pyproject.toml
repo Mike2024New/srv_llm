@@ -1,11 +1,11 @@
 [project]
 name = "llm-offline"
-version = "0.12.0"
+version = "0.13.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "llama-cpp-python==0.3.30",
+    "llama-cpp-python @ https://github.com/Mike2024New/srv_llm/releases/download/v1.0.0/llama_cpp_python-0.3.30-py3-none-win_amd64.whl", # скомпилированный для поддержки avx2 cpp.python (решение проблемы с ошибкой avx512)
     "infrastructure-path-utils @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_path_utils",
     "infrastructure-settings-manager @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_settings_manager",
     "infrastructure-server @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_server",
