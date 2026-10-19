@@ -134,14 +134,10 @@ class Engine:
         last_index = -1 if self._messages[-1]['role'] == 'user' else -2
         new_messages = [msg for msg in self._messages[last_index:]]
         new_messages.insert(0, {'role': 'user', 'content': f'[ПАМЯТЬ О ПРОШЛОМ ДИАЛОГЕ]\n{summary_text}'})
-        new_messages.insert(0, {'role': 'system', 'content': self._messages[0]})  # системный промпт
+        new_messages.insert(0, {'role': 'system', 'content': self._messages[0].get('content', '')})
         self._messages = new_messages.copy()
         self._ask_blocking = False
         return new_messages
-        # лишние принты в коде🤔? Это классика.
-        # print('=================')
-        # print(self._messages)
-        # print('=================')
 
     def count_context_tokens(self) -> dict | None:
         """
