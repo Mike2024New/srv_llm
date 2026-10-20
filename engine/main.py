@@ -41,17 +41,20 @@ class Engine:
         if self._model is None:
             self._parameters = parameters
             model_path = settings.models_dir_prop / self._parameters.model
-            logger.info(f'Запуск llm engine')
-            self._model = Llama(
-                model_path=str(model_path),
-                n_ctx=self._parameters.n_ctx,  # длина контекста чем больше тем позже модель забудет 1 сообщение
-                n_threads=self._parameters.processor_power_percentage,  # количество задействованых ядер процессора
-                use_mmap=self._parameters.use_mmap,  # Использ. SSD - медленнее, или загрузить в RAM быстрее? 1/0
-                verbose=self._parameters.model_log,  # показывать логи llm? 1/0
-            )
-            self._model.chat_format = 'gemma'  # потом адаптировать под другие форматы
+            logger.info(f'Запуск engine')
             # логирование параметров запуска (системный промпт может содержать что-то личное, поэтому он убран из логирования)
             logger.debug(parameters.model_dump(exclude={'system_prompt'}))
+            try:
+                self._model = Llama(
+                    model_path=str(model_path),
+                    n_ctx=self._parameters.n_ctx,  # длина контекста чем больше тем позже модель забудет 1 сообщение
+                    n_threads=self._parameters.processor_power_percentage,  # количество задействованых ядер процессора
+                    use_mmap=self._parameters.use_mmap,  # Использ. SSD - медленнее, или загрузить в RAM быстрее? 1/0
+                    verbose=self._parameters.model_log,  # показывать логи llm? 1/0
+                )
+                self._model.chat_format = 'gemma'  # потом адаптировать под другие форматы
+            except Exception as err:
+                logger.exception(f'Ошибка запуска engine: {err}')
             logger.info(f'engine запущен')
             self._messages.append({'role': 'system', 'content': self._parameters.system_prompt})
 
@@ -120,6 +123,9 @@ class Engine:
             task = asyncio.create_task(self.ask(prompt=prompt, summary=True))
             self._parameters.one_message_mode = True
             result = await task
+        except Exception as err:
+            logger.exception(f'Ошибка summary_messages: {err}')
+            raise
         finally:
             self._parameters.one_message_mode = False
         if result is None:
