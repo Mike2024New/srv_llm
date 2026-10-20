@@ -11,7 +11,12 @@ app = get_cli_app(
     name=settings.app_name,
     server=server_factory(engine=Engine()),
     root_dir=get_root_dir_path(),
-    cli_settings=CliSettings(enable_run_server=True, enable_build_command=True, enable_git_push=True),
+    cli_settings=CliSettings(
+        enable_run_server=True,
+        enable_build_command=True,
+        enable_git_push=True,
+        enable_run_test=True,
+    ),
     build_settings=build_settings,
 )
 

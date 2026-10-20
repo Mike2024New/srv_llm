@@ -1,5 +1,5 @@
 import asyncio
-
+import uuid
 from fastapi import APIRouter, WebSocket
 from starlette.websockets import WebSocketDisconnect
 from config import Parameters, ProcessInput, HistoryMessages
@@ -18,9 +18,13 @@ def routers_factory(engine: Engine) -> APIRouter:
         }
 
     @router.post('/start/')
-    def start(input_parameters: Parameters):
-        """Запуск движка с передачей параметров"""
-        engine.start(parameters=input_parameters)
+    def start(input_parameters: Parameters, request_id: str | None = None):
+        """
+        Запуск движка с передачей параметров
+        reuqest_id - передача id для сквозного логирования
+        """
+        request_id = request_id if request_id is not None else str(uuid.uuid4())[:8]
+        engine.start(parameters=input_parameters, request_id=request_id)
         return {'result': 'Engine запущен'}
 
     @router.get('/list_supported_models/')

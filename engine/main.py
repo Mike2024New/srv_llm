@@ -1,10 +1,8 @@
 import asyncio
 import uuid
 from llama_cpp import Llama
-from config import Parameters, settings
+from config import Parameters, settings, logger
 from llama_cpp.llama_chat_format import LlamaChatCompletionHandlerRegistry
-
-# from infrastructure_path_utils import get_root_dir_path # для отладочного лога
 
 """
 Минимальный упрощенный скрипт для работы с llm моделями.
@@ -37,12 +35,13 @@ class Engine:
         """Получить текущие параметры"""
         return self._parameters
 
-    def start(self, parameters: Parameters):
+    def start(self, parameters: Parameters, request_id: str):
         """Загрузка модели"""
+        logger.set_logger(request_id=request_id)
         if self._model is None:
             self._parameters = parameters
             model_path = settings.models_dir_prop / self._parameters.model
-
+            logger.info(f'Запуск llm engine')
             self._model = Llama(
                 model_path=str(model_path),
                 n_ctx=self._parameters.n_ctx,  # длина контекста чем больше тем позже модель забудет 1 сообщение
@@ -50,13 +49,10 @@ class Engine:
                 use_mmap=self._parameters.use_mmap,  # Использ. SSD - медленнее, или загрузить в RAM быстрее? 1/0
                 verbose=self._parameters.model_log,  # показывать логи llm? 1/0
             )
-            self._model.chat_format = 'gemma'
-
-            # временно лог для отладки
-            # content = f'\n\nновая сессия. Модель: {self._parameters.model}, системный промпт: {self._parameters.system_prompt} \n'
-            # with open(file=get_root_dir_path() / 'log.txt', mode='a', encoding='utf8') as f:
-            #     f.write(content)
-
+            self._model.chat_format = 'gemma'  # потом адаптировать под другие форматы
+            # логирование параметров запуска (системный промпт может содержать что-то личное, поэтому он убран из логирования)
+            logger.debug(parameters.model_dump(exclude={'system_prompt'}))
+            logger.info(f'engine запущен')
             self._messages.append({'role': 'system', 'content': self._parameters.system_prompt})
 
     async def ask(self, prompt: str, queue: asyncio.Queue | None = None, summary: bool = False) -> str | None:
@@ -118,7 +114,7 @@ class Engine:
             'Сожми весь предыдущий диалог в 1 краткое сообщение summary '
             '(резюме о тебе и пользователе (не упусти детали, как его зовут, чем увлекается и что любит) для будущих диалогов), для следующих бесед'
             'не используй маркдауны и звёздочки'
-        )
+        )  # промпт потом вынести в общие конфигурации
         self._ask_blocking = True
         try:
             task = asyncio.create_task(self.ask(prompt=prompt, summary=True))
@@ -165,11 +161,13 @@ class Engine:
 
     def stop(self):
         """Высвобождение ресурсов"""
+        logger.info(f'Остановка engine')
         if self._model is not None:
             del self._model
             self._model = None
         self._messages.clear()
         self._parameters = None
+        logger.info(f'engine остановлен')
 
 
 async def main():
@@ -182,27 +180,27 @@ async def main():
         use_mmap=True,
     )
 
-    parameters.model_log = True
-    engine.start(parameters=parameters)
+    # parameters.model_log = True
+    engine.start(parameters=parameters, request_id='#001')
     print(engine.count_context_tokens())
 
-    print(await engine.ask(prompt='Привет, меня зовут шарик'))
-    print(await engine.ask(prompt='Я живу в Москве и у меня нет собаки и кошки'))
-    print(await engine.ask(prompt='У меня также нет и ни одного попугая, и даже намека на птиц'))
-    print(await engine.ask(prompt='А ещё у меня нет машины, но я могу приехать на пешком.'))
-    print(await engine.ask(prompt='Я часто бываю в Москве потому что живу там'))
-    print(await engine.ask(prompt='А помнишь как меня зовут?'))
-    print(await engine.ask(prompt='А помнишь из какого города?'))
-    print(await engine.ask(prompt='Отлично, кстати у меня есть компьютер.'))
-    print(await engine.ask(prompt='А ёще я программирую на python и не только.'))
-    print(await engine.ask(prompt='Ну и отлично, а что ты умеешь?'))
-
-    print('messages после summary:')
-    [print(i) for i in engine._messages]  # noqa
-    print(engine.count_context_tokens())
-
-    print(await engine.ask(prompt='Расскажи, что ты знаешь обо мне?'))
-    print(await engine.ask(prompt='А помнишь как меня зовут?'))
+    # print(await engine.ask(prompt='Привет, меня зовут шарик'))
+    # print(await engine.ask(prompt='Я живу в Москве и у меня нет собаки и кошки'))
+    # print(await engine.ask(prompt='У меня также нет и ни одного попугая, и даже намека на птиц'))
+    # print(await engine.ask(prompt='А ещё у меня нет машины, но я могу приехать на пешком.'))
+    # print(await engine.ask(prompt='Я часто бываю в Москве потому что живу там'))
+    # print(await engine.ask(prompt='А помнишь как меня зовут?'))
+    # print(await engine.ask(prompt='А помнишь из какого города?'))
+    # print(await engine.ask(prompt='Отлично, кстати у меня есть компьютер.'))
+    # print(await engine.ask(prompt='А ёще я программирую на python и не только.'))
+    # print(await engine.ask(prompt='Ну и отлично, а что ты умеешь?'))
+    #
+    # print('messages после summary:')
+    # [print(i) for i in engine._messages]  # noqa
+    # print(engine.count_context_tokens())
+    #
+    # print(await engine.ask(prompt='Расскажи, что ты знаешь обо мне?'))
+    # print(await engine.ask(prompt='А помнишь как меня зовут?'))
 
 
 if __name__ == '__main__':
