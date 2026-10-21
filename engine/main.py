@@ -58,6 +58,32 @@ class Engine:
             logger.info(f'engine запущен')
             self._messages.append({'role': 'system', 'content': self._parameters.system_prompt})
 
+    async def ask_one(self, prompt: str) -> str | None:
+        """
+        :param prompt: простой одиночный запрос к модели без сохранения истории
+        """
+        messages = [{'role': 'user', 'content': prompt}]
+        response_text = ''
+        self._interrupt_answer.clear()
+
+        for chunk in self._model.create_chat_completion(
+                messages=messages,  # noqa
+                max_tokens=self._parameters.max_tokens,
+                temperature=self._parameters.temperature,
+                stream=True
+        ):
+            await asyncio.sleep(0.001)  # передача управления внешнему циклу
+            if self._interrupt_answer.is_set():
+                break
+            if "choices" in chunk and len(chunk["choices"]) > 0:
+                delta = chunk["choices"][0].get("delta", {})
+                if "content" in delta:
+                    content = delta["content"]
+                    response_text += content
+        if response_text:
+            return response_text
+        return None
+
     async def ask(self, prompt: str, queue: asyncio.Queue | None = None, summary: bool = False) -> str | None:
         """
         Генерация токенов от ИИ по заданному промпту

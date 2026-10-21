@@ -44,6 +44,12 @@ def routers_factory(engine: Engine) -> APIRouter:
         result = await engine.ask(prompt=process_request.prompt)
         return {'result': result}
 
+    @router.post('/ask_one/')
+    async def ask_one(process_request: ProcessInput):
+        """Задать одиночный вопрос llm без истории и контекста (для служебных запросов например)"""
+        result = await engine.ask_one(prompt=process_request.prompt)
+        return {'result': result}
+
     @router.get('/interrupt/')
     async def interrupt():
         """Прерывание генерации токенов"""
