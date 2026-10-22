@@ -55,6 +55,7 @@ class Engine:
                 self._model.chat_format = 'gemma'  # потом адаптировать под другие форматы
             except Exception as err:
                 logger.exception(f'Ошибка запуска engine: {err}')
+                raise
             logger.info(f'engine запущен')
             self._messages.append({'role': 'system', 'content': self._parameters.system_prompt})
 
