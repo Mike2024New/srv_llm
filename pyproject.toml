@@ -1,9 +1,9 @@
 [project]
 name = "llm-offline"
-version = "0.20.0"
+version = "0.21.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = "==3.12.*"
 dependencies = [
     "llama-cpp-python @ https://github.com/Mike2024New/srv_llm/releases/download/v1.0.0/llama_cpp_python-0.3.30-py3-none-win_amd64.whl",
     "infrastructure-process-utils @ git+https://github.com/Mike2024New/infrastructure2.git@f0a14a3390329819204ecaf4f58053adb39a17f3#subdirectory=packages/infrastructure_process_utils",
