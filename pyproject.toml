@@ -1,21 +1,21 @@
 [project]
 name = "llm-offline"
-version = "0.19.0"
+version = "0.20.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "llama-cpp-python @ https://github.com/Mike2024New/srv_llm/releases/download/v1.0.0/llama_cpp_python-0.3.30-py3-none-win_amd64.whl",
-    "infrastructure-process-utils @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_process_utils",
+    "infrastructure-process-utils @ git+https://github.com/Mike2024New/infrastructure2.git@42571c4a0f8a041d78f19edda92213b7e7c25593#subdirectory=packages/infrastructure_process_utils",
     "infrastructure-path-utils @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_path_utils",
-    "infrastructure-settings-manager @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_settings_manager",
-    "infrastructure-server @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_server",
-    "infrastructure-builder @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_builder",
-    "infrastructure-http-clients @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_http_clients",
-    "infrastructure-cli-utils @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_cli_utils",
-    "infrastructure-log-utils @ git+https://github.com/Mike2024New/infrastructure2.git@main#subdirectory=packages/infrastructure_log_utils",
-    "websockets>=17.1",
-    "loguru>=0.7.3",
+    "infrastructure-settings-manager @ git+https://github.com/Mike2024New/infrastructure2.git@42571c4a0f8a041d78f19edda92213b7e7c25593#subdirectory=packages/infrastructure_settings_manager",
+    "infrastructure-server @ git+https://github.com/Mike2024New/infrastructure2.git@42571c4a0f8a041d78f19edda92213b7e7c25593#subdirectory=packages/infrastructure_server",
+    "infrastructure-builder @ git+https://github.com/Mike2024New/infrastructure2.git@42571c4a0f8a041d78f19edda92213b7e7c25593#subdirectory=packages/infrastructure_builder",
+    "infrastructure-http-clients @ git+https://github.com/Mike2024New/infrastructure2.git@42571c4a0f8a041d78f19edda92213b7e7c25593#subdirectory=packages/infrastructure_http_clients",
+    "infrastructure-cli-utils @ git+https://github.com/Mike2024New/infrastructure2.git@42571c4a0f8a041d78f19edda92213b7e7c25593#subdirectory=packages/infrastructure_cli_utils",
+    "infrastructure-log-utils @ git+https://github.com/Mike2024New/infrastructure2.git@42571c4a0f8a041d78f19edda92213b7e7c25593#subdirectory=packages/infrastructure_log_utils",
+    "websockets==17.1",
+    "loguru==0.7.3",
 ]
 
 [tool.pytest.ini_options]
